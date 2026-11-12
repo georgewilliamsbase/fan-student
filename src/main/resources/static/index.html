@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Учет студентов</title>
+    <link rel="icon" href="data:,">
+    <script>
+        // тема применяется до отрисовки чтобы не мигал белый фон
+        try { if (localStorage.getItem('app_theme') === 'dark') document.documentElement.classList.add('pre-dark'); } catch (e) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- переключатель темы на экране входа (в углу) -->
+<div id="login-switchers" class="home-switchers hidden">
+    <div class="switcher-col">
+        <div class="switcher-label">Тема</div>
+        <div class="switcher-row theme-switch"></div>
+    </div>
+</div>
+
+<!-- экран входа -->
+<section id="login-view" class="auth-page hidden">
+    <div class="auth-logo">
+        <div class="topbar-logo">Учет студентов</div>
+        <div class="topbar-sub">Система управления</div>
+    </div>
+    <form id="login-form" class="auth-box">
+        <h2>Вход в систему</h2>
+        <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="Введите email" required autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label for="login-password">Пароль</label>
+            <input type="password" id="login-password" placeholder="Введите пароль" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn-green">Войти</button>
+        <div id="login-error" class="error center hidden"></div>
+        <details class="auth-hint">
+            <summary>Тестовые учетные записи</summary>
+            <table class="hint-table">
+                <tr><td>superadmin@example.com</td><td>superAdmin</td></tr>
+                <tr><td>admin@example.com</td><td>admin</td></tr>
+                <tr><td>teacher@example.com</td><td>teacher</td></tr>
+            </table>
+        </details>
+    </form>
+</section>
+
+<!-- основное приложение -->
+<section id="app-view" class="hidden">
+    <aside class="sidebar">
+        <nav class="sidebar-nav">
+            <a class="nav-home" data-tab="home">Главная</a>
+            <a data-tab="students" class="role-students">Студенты</a>
+            <a data-tab="users" class="role-users">Пользователи</a>
+            <button id="logout-btn" class="logout-btn">Выйти</button>
+        </nav>
+        <div class="sidebar-user">
+            <div class="switcher-label">Вы вошли как</div>
+            <div id="who-email" class="who-email"></div>
+            <div id="who-roles" class="badges"></div>
+        </div>
+        <div class="sidebar-switchers">
+            <div class="switcher-col">
+                <div class="switcher-label">Тема</div>
+                <div class="switcher-row theme-switch"></div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content with-sidebar">
+
+        <!-- главная -->
+        <section id="home-tab" class="hidden">
+            <div class="topbar-logo">Учет студентов</div>
+            <div class="topbar-sub center">Выберите раздел</div>
+            <div class="tiles">
+                <a class="tile tile-green role-students" data-go="students">Студенты</a>
+                <a class="tile role-students admin-only" data-go="add-student">+ Добавить студента</a>
+                <a class="tile tile-green role-users" data-go="users">Пользователи</a>
+                <a class="tile role-users" data-go="add-user">+ Новый пользователь</a>
+                <div class="divider"></div>
+                <a class="tile tile-red" data-go="logout">Выйти из системы</a>
+            </div>
+            <p id="no-access" class="empty-message hidden">У вашей роли нет доступных разделов.</p>
+        </section>
+
+        <!-- студенты -->
+        <section id="students-tab" class="hidden">
+            <div class="page-toolbar">
+                <h2>Студенты <span id="students-count" class="count"></span></h2>
+                <button id="add-student-btn" class="btn-green admin-only">+ Новый студент</button>
+            </div>
+            <div class="filter-bar">
+                <input type="text" id="students-search" placeholder="Поиск по номеру, имени или фамилии...">
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Номер</th><th>Имя</th><th>Фамилия</th><th>Действия</th></tr></thead>
+                    <tbody id="students-body"></tbody>
+                </table>
+            </div>
+            <div id="students-empty" class="empty-message hidden">Студентов не найдено.</div>
+        </section>
+
+        <!-- пользователи -->
+        <section id="users-tab" class="hidden">
+            <div class="page-toolbar">
+                <h2>Пользователи <span id="users-count" class="count"></span></h2>
+                <button id="add-user-btn" class="btn-green">+ Новый пользователь</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Номер</th><th>Email</th><th>Роли</th><th>Действия</th></tr></thead>
+                    <tbody id="users-body"></tbody>
+                </table>
+            </div>
+            <div id="users-empty" class="empty-message hidden">Пользователей нет.</div>
+        </section>
+    </main>
+</section>
+
+<!-- модальное окно с формой -->
+<div id="modal" class="confirm-modal">
+    <div class="confirm-box form-box">
+        <div id="modal-title" class="confirm-title"></div>
+        <form id="modal-form"></form>
+    </div>
+</div>
+
+<!-- окно подтверждения -->
+<div id="confirm" class="confirm-modal">
+    <div class="confirm-box">
+        <div class="confirm-title">Подтверждение</div>
+        <div id="confirm-text" class="confirm-text"></div>
+        <div class="confirm-actions">
+            <button id="confirm-cancel" class="confirm-btn cancel">Отмена</button>
+            <button id="confirm-ok" class="confirm-btn danger">Удалить</button>
+        </div>
+    </div>
+</div>
+
+<div id="toasts" class="toast-container"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
